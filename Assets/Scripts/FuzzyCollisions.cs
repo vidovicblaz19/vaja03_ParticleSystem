@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class FuzzyCollisions : MonoBehaviour
 {
-    public Vector3 gravity = new Vector3(0, -9.81f, 0);
-    public float accelerationDueToGravity = 9.81f;
-    //public float dampeningFactor = 1f;
+
+    private Vector3 gravity = new Vector3(0, -9.81f, 0);
 
     private Transform[] Particles;
     private Transform Bounds;
 
     private Vector3[] _velocities;
+    public float repellingForce = 35f;
 
     // Start is called before the first frame update
     void Start()
@@ -27,13 +27,12 @@ public class FuzzyCollisions : MonoBehaviour
         }
     }
 
-    private float repellingForce = 35f;
     private Vector3 isBoundsCollision(Transform Particle, Vector3 bounds) {
 
         Vector3 force = Particle.position - bounds;
         float dist = force.magnitude;
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
+        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
+        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
 
 
         float strength = repellingForce / (dist * dist);
@@ -44,12 +43,14 @@ public class FuzzyCollisions : MonoBehaviour
     {
         Vector3 force = ParticleA.position - ParticleB.position;
         float dist = force.magnitude;
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
+        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
+        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
 
         float strength = repellingForce / (dist * dist);
         return force * strength;
     }
+
+    //private float beta = 0.06f;
 
     // Update is called once per frame
     void FixedUpdate()
@@ -99,9 +100,10 @@ public class FuzzyCollisions : MonoBehaviour
                 }
 
                 _velocities[i] += isBoundsCollision(Particles[i], bounds) * Time.fixedDeltaTime;
+                //_velocities[i] = (1 - beta) * _velocities[i] + beta * isBoundsCollision(Particles[i], bounds) * Time.fixedDeltaTime;
+
             }
 
-            //_velocities[i] -= (1 + dampeningFactor) * Vector3.Dot(_velocities[i], n) * n;
             //compute new positions for particles
             Particles[i].position += (_velocities[i] + tmpVelocities[i]) / 2 * Time.deltaTime;
         }

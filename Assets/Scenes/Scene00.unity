@@ -632,6 +632,7 @@ GameObject:
   - component: {fileID: 955501427}
   - component: {fileID: 955501428}
   - component: {fileID: 955501430}
+  - component: {fileID: 955501429}
   m_Layer: 0
   m_Name: Custom Particle System
   m_TagString: Untagged
@@ -669,6 +670,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   accelerationDueToGravity: 9.8
   dampeningFactor: 0.95
+--- !u!114 &955501429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 955501426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd2921ec19a1bc64b8479d3086049ba6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isStarted: 0
 --- !u!114 &955501430
 MonoBehaviour:
   m_ObjectHideFlags: 0
