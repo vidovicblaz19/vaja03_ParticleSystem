@@ -5,13 +5,14 @@ using UnityEngine;
 public class FuzzyCollisions : MonoBehaviour
 {
 
-    private Vector3 gravity = new Vector3(0, -9.81f, 0);
+    public Vector3 gravity = new Vector3(0, -9.81f, 0);
 
     private Transform[] Particles;
     private Transform Bounds;
 
     private Vector3[] _velocities;
-    public float repellingForce = 35f;
+    public float alpha_multiplier = 1f;
+    public float beta = 0.95f;
 
     // Start is called before the first frame update
     void Start()
@@ -27,52 +28,40 @@ public class FuzzyCollisions : MonoBehaviour
         }
     }
 
-    private Vector3 isBoundsCollision(Transform Particle, Vector3 bounds) {
 
-        Vector3 force = Particle.position - bounds;
-        float dist = force.magnitude;
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
+    private Vector3 dComputation(Vector3 ParticleA, Vector3 ParticleB) { 
+        Vector3 force = ParticleA - ParticleB;
+        float alpha = alpha_multiplier * (force.magnitude * force.magnitude);
 
+        float imen = Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z);
+        force = force / (Mathf.Pow(imen, alpha));
 
-        float strength = repellingForce / (dist * dist);
-        return force * strength;
+        return force;
     }
 
-    private Vector3 isSphereCollision(Transform ParticleA, Transform ParticleB)
-    {
-        Vector3 force = ParticleA.position - ParticleB.position;
-        float dist = force.magnitude;
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
-
-        float strength = repellingForce / (dist * dist);
-        return force * strength;
-    }
-
-    //private float beta = 0.06f;
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        Vector3[] tmpVelocities = _velocities;
+        
         //collision
         for (int i = 0; i < Particles.Length; i++)
         {
             //===Gravity===
-            _velocities[i] += gravity * Time.fixedDeltaTime;
+            //_velocities[i] += gravity * Time.fixedDeltaTime;
         }
 
         for (int i = 0; i < Particles.Length; i++)
-        {        
+        {
+            Vector3 d = Vector3.zero;
 
             //check for collision with another sphere
             for (int j = 0; j < Particles.Length; j++)
             {
                 if (j == i) continue;
-
-                _velocities[i] += isSphereCollision(Particles[i], Particles[j]) * Time.fixedDeltaTime;
+                d += dComputation(Particles[i].position, Particles[j].position);
             }
+
             //check for collision with bounds
             for (int j = 0; j < 6; j++) {
                 Vector3 bounds = Vector3.zero;
@@ -99,13 +88,19 @@ public class FuzzyCollisions : MonoBehaviour
                         break;
                 }
 
-                _velocities[i] += isBoundsCollision(Particles[i], bounds) * Time.fixedDeltaTime;
-                //_velocities[i] = (1 - beta) * _velocities[i] + beta * isBoundsCollision(Particles[i], bounds) * Time.fixedDeltaTime;
-
+                d += dComputation(Particles[i].position, bounds);
+                
             }
 
+
+            //_velocities[i] = (1 - beta) * _velocities[i] + beta * d;
+            _velocities[i] = _velocities[i] + beta * d;
+
+            //Gravity
+            _velocities[i] += gravity * Time.fixedDeltaTime;
             //compute new positions for particles
-            Particles[i].position += (_velocities[i] + tmpVelocities[i]) / 2 * Time.deltaTime;
+            Particles[i].position += _velocities[i] * Time.fixedDeltaTime;
+
         }
     }
 }
