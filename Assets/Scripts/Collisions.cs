@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class Collisions : MonoBehaviour
 {
+    public int number_of_particles = 10;
+    public Material particle_material;
     public Vector3 gravity = new Vector3(0, -9.81f, 0);
     public float dampeningFactor = 0.95f;
     public bool isSolidCollisions = true;
-    public float repellingForce = 35f;
-    public float beta = 0.05f;
+    public float alpha = 3f;
+    public float beta = 0.95f;
 
     private Transform[] Particles;
     private Transform Bounds;
@@ -19,8 +21,16 @@ public class Collisions : MonoBehaviour
     void Start()
     {
         Bounds = this.transform.GetChild(0).gameObject.transform;
-        GameObject _GO_Particles = this.transform.GetChild(1).gameObject;
 
+        for (int i = 0; i < number_of_particles; i++)
+        {
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.position = new Vector3(Random.Range(-(Bounds.localScale.x / 2)+1, (Bounds.localScale.x / 2)-1), Random.Range(-(Bounds.localScale.y / 2)+1, (Bounds.localScale.y / 2)-1), Random.Range(-(Bounds.localScale.z / 2)+1, (Bounds.localScale.z / 2)-1));
+            sphere.GetComponent<Renderer>().material = particle_material;
+            sphere.transform.parent = this.transform.GetChild(1);
+        }
+
+        GameObject _GO_Particles = this.transform.GetChild(1).gameObject;
         Particles = new Transform[_GO_Particles.transform.childCount];
         _velocities = new Vector3[_GO_Particles.transform.childCount];
          
@@ -28,6 +38,15 @@ public class Collisions : MonoBehaviour
         {
             Particles[i] = (_GO_Particles.transform.GetChild(i).transform);
         }
+    }
+
+    private Vector3 dComputation(Vector3 ParticleA, Vector3 ParticleB)
+    {
+        Vector3 force = ParticleA - ParticleB;
+        float imen = Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z);
+        force = force / (Mathf.Pow(imen, alpha));
+
+        return force;
     }
 
     private bool isSphereSolidCollision(Transform ParticleA, Transform ParticleB)
@@ -77,47 +96,15 @@ public class Collisions : MonoBehaviour
         return Vector3.zero;
     }
 
-    private Vector3 isBoundsFuzzyCollision(Transform Particle, Vector3 bounds)
-    {
-
-        Vector3 force = Particle.position - bounds;
-        float dist = force.magnitude;
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
-
-
-        float strength = repellingForce / (dist * dist);
-        return force * strength;
-    }
-
-    private Vector3 isSphereFuzzyCollision(Transform ParticleA, Transform ParticleB)
-    {
-        Vector3 force = ParticleA.position - ParticleB.position;
-        float dist = force.magnitude;
-        force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z));
-        //force = force / (Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z)+1);
-
-        float strength = repellingForce / (dist * dist);
-        return force * strength;
-    }
-
     // Update is called once per frame
     void FixedUpdate()
     {
-        Vector3[] tmpVelocities = _velocities;
-
         for (int i = 0; i < Particles.Length; i++)
         {
-            //===Gravity===
-            _velocities[i] += gravity * Time.fixedDeltaTime;
-        }
-
-        //collision
-        for (int i = 0; i < Particles.Length; i++)
-        {
-
             if (isSolidCollisions)
             {
+                //gravity
+                _velocities[i] += gravity * Time.fixedDeltaTime;
                 //check for collision with another sphere
                 for (int j = 0; j < Particles.Length; j++)
                 {
@@ -146,52 +133,60 @@ public class Collisions : MonoBehaviour
                 Vector3 n = isBoundsSolidCollision(Particles[i], Bounds, _velocities[i]);
 
                 _velocities[i] -= (1 + dampeningFactor) * Vector3.Dot(_velocities[i], n) * n;
-        }
-        else
-        {
-
-
-            //check for collision with another sphere
-            for (int j = 0; j < Particles.Length; j++)
-            {
-                if (j == i) continue;
-
-                _velocities[i] += isSphereFuzzyCollision(Particles[i], Particles[j]) * Time.fixedDeltaTime;
             }
-            //check for collision with bounds
-            for (int j = 0; j < 6; j++)
+            else
             {
-                Vector3 bounds = Vector3.zero;
-                switch (j)
+                Vector3 d = Vector3.zero;
+
+                //gravity
+                d += gravity;
+
+                //check for interaction with another sphere
+                for (int j = 0; j < Particles.Length; j++)
                 {
-                    case 0:
-                        bounds = new Vector3(-(Bounds.localScale.x / 2), Particles[i].position.y, Particles[i].position.z);
-                        break;
-                    case 1:
-                        bounds = new Vector3((Bounds.localScale.x / 2), Particles[i].position.y, Particles[i].position.z);
-                        break;
-                    case 2:
-                        bounds = new Vector3(Particles[i].position.x, -(Bounds.localScale.y / 2), Particles[i].position.z);
-                        break;
-                    case 3:
-                        break;
-                    case 4:
-                        bounds = new Vector3(Particles[i].position.x, Particles[i].position.y, -(Bounds.localScale.z / 2));
-                        break;
-                    case 5:
-                        bounds = new Vector3(Particles[i].position.x, Particles[i].position.y, (Bounds.localScale.z / 2));
-                        break;
-                    default:
-                        break;
+                    if (j == i) continue;
+                    d += dComputation(Particles[i].position, Particles[j].position);
                 }
 
-                _velocities[i] += isBoundsFuzzyCollision(Particles[i], bounds) * Time.fixedDeltaTime;
-                //_velocities[i] = (1 - beta) * _velocities[i] + beta * isBoundsCollision(Particles[i], bounds) * Time.fixedDeltaTime;
+                //check for interaction with bounds
+                for (int j = 0; j < 6; j++)
+                {
+                    Vector3 bounds = Vector3.zero;
+                    switch (j)
+                    {
+                        case 0:
+                            // - x
+                            bounds = new Vector3(-(Bounds.localScale.x / 2), Particles[i].position.y, Particles[i].position.z);
+                            break;
+                        case 1:
+                            // x
+                            bounds = new Vector3((Bounds.localScale.x / 2), Particles[i].position.y, Particles[i].position.z);
+                            break;
+                        case 2:
+                            // -y
+                            bounds = new Vector3(Particles[i].position.x, -(Bounds.localScale.y / 2), Particles[i].position.z);
+                            break;
+                        case 3:
+                            break;
+                        case 4:
+                            // -z
+                            bounds = new Vector3(Particles[i].position.x, Particles[i].position.y, -(Bounds.localScale.z / 2));
+                            break;
+                        case 5:
+                            // z
+                            bounds = new Vector3(Particles[i].position.x, Particles[i].position.y, (Bounds.localScale.z / 2));
+                            break;
+                        default:
+                            break;
+                    }
+
+                    d += dComputation(Particles[i].position, bounds);
+                }
+
+                _velocities[i] = (1 - beta) * _velocities[i] + beta * d;
             }
-            
-        }
             //compute new positions for particles
-            Particles[i].position += (_velocities[i] + tmpVelocities[i]) / 2 * Time.deltaTime;
+            Particles[i].position += _velocities[i] * Time.fixedDeltaTime;
         }
     }
 }
