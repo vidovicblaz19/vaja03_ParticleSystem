@@ -31,7 +31,11 @@ public class FuzzyCollisions : MonoBehaviour
 
     private Vector3 dComputation(Vector3 ParticleA, Vector3 ParticleB) { 
         Vector3 force = ParticleA - ParticleB;
-        float alpha = alpha_multiplier * (force.magnitude * force.magnitude);
+
+        float cc = alpha_multiplier / force.sqrMagnitude;
+        //float alpha = alpha_multiplier * force.sqrMagnitude;
+        float alpha = cc * force.sqrMagnitude;
+
 
         float imen = Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z);
         force = force / (Mathf.Pow(imen, alpha));
@@ -44,16 +48,12 @@ public class FuzzyCollisions : MonoBehaviour
     void FixedUpdate()
     {
         
-        //collision
-        for (int i = 0; i < Particles.Length; i++)
-        {
-            //===Gravity===
-            //_velocities[i] += gravity * Time.fixedDeltaTime;
-        }
-
         for (int i = 0; i < Particles.Length; i++)
         {
             Vector3 d = Vector3.zero;
+
+            //gravity
+            d += gravity * Time.fixedDeltaTime;
 
             //check for collision with another sphere
             for (int j = 0; j < Particles.Length; j++)
@@ -93,11 +93,11 @@ public class FuzzyCollisions : MonoBehaviour
             }
 
 
-            //_velocities[i] = (1 - beta) * _velocities[i] + beta * d;
-            _velocities[i] = _velocities[i] + beta * d;
+            _velocities[i] = (1 - beta) * _velocities[i] + beta * d;
+            //_velocities[i] = _velocities[i] + beta * d;
 
             //Gravity
-            _velocities[i] += gravity * Time.fixedDeltaTime;
+            //_velocities[i] += gravity * Time.fixedDeltaTime;
             //compute new positions for particles
             Particles[i].position += _velocities[i] * Time.fixedDeltaTime;
 
