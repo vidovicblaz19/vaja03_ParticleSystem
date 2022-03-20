@@ -11,7 +11,8 @@ public class FuzzyCollisions : MonoBehaviour
     private Transform Bounds;
 
     private Vector3[] _velocities;
-    public float alpha_multiplier = 1f;
+    //public float alpha_multiplier = 1f;
+    public float alpha = 3f;
     public float beta = 0.95f;
 
     // Start is called before the first frame update
@@ -32,10 +33,10 @@ public class FuzzyCollisions : MonoBehaviour
     private Vector3 dComputation(Vector3 ParticleA, Vector3 ParticleB) { 
         Vector3 force = ParticleA - ParticleB;
 
-        float cc = alpha_multiplier / force.sqrMagnitude;
+        //float cc = alpha_multiplier / force.sqrMagnitude;
         //float alpha = alpha_multiplier * force.sqrMagnitude;
-        float alpha = cc * force.sqrMagnitude;
-
+        //float alpha = cc * force.sqrMagnitude;
+        //float alpha = alpha_multiplier;
 
         float imen = Mathf.Sqrt(force.x * force.x + force.y * force.y + force.z * force.z);
         force = force / (Mathf.Pow(imen, alpha));
@@ -96,8 +97,6 @@ public class FuzzyCollisions : MonoBehaviour
             _velocities[i] = (1 - beta) * _velocities[i] + beta * d;
             //_velocities[i] = _velocities[i] + beta * d;
 
-            //Gravity
-            //_velocities[i] += gravity * Time.fixedDeltaTime;
             //compute new positions for particles
             Particles[i].position += _velocities[i] * Time.fixedDeltaTime;
 
