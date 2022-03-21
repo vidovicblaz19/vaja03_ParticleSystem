@@ -11,6 +11,7 @@ public class Collisions : MonoBehaviour
     public bool isSolidCollisions = true;
     public float alpha = 3f;
     public float beta = 0.95f;
+    public bool betaDampening = true;
 
     private Transform[] Particles;
     private Transform Bounds;
@@ -139,7 +140,13 @@ public class Collisions : MonoBehaviour
                 Vector3 d = Vector3.zero;
 
                 //gravity
-                d += gravity;
+                if (betaDampening)
+                {
+                    d += gravity;
+                }
+                else {
+                    d += gravity * Time.fixedDeltaTime;
+                }
 
                 //check for interaction with another sphere
                 for (int j = 0; j < Particles.Length; j++)
@@ -182,8 +189,13 @@ public class Collisions : MonoBehaviour
 
                     d += dComputation(Particles[i].position, bounds);
                 }
-
-                _velocities[i] = (1 - beta) * _velocities[i] + beta * d;
+                if (betaDampening)
+                {
+                    _velocities[i] = (1 - beta) * _velocities[i] + beta * d;
+                }
+                else {
+                    _velocities[i] += d;
+                }
             }
             //compute new positions for particles
             Particles[i].position += _velocities[i] * Time.fixedDeltaTime;
